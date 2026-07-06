@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CheckSquare, Coffee, Timer } from 'lucide-react'
 import { useAppStore } from '../store'
 import { SESSION_LABELS } from '../lib/pomodoro'
-import { todayKey } from '../lib/rewards'
+import { dayKeyFromISO, todayKey } from '../lib/rewards'
 import { activityByDay } from '../lib/history'
 
 const MONTH_NAMES = [
@@ -47,7 +47,7 @@ export function HistoryView() {
   const dayEntries = useMemo(() => {
     const entries = []
     for (const s of sessions) {
-      if (!s.completed || s.startedAt.slice(0, 10) !== date) continue
+      if (!s.completed || dayKeyFromISO(s.startedAt) !== date) continue
       entries.push({
         iso: s.startedAt,
         icon: s.type === 'foco' ? Timer : Coffee,
@@ -57,7 +57,7 @@ export function HistoryView() {
       })
     }
     for (const t of tasks) {
-      if (!t.done || t.completedAt?.slice(0, 10) !== date) continue
+      if (!t.done || !t.completedAt || dayKeyFromISO(t.completedAt) !== date) continue
       entries.push({
         iso: t.completedAt!,
         icon: CheckSquare,

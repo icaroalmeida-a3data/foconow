@@ -14,8 +14,17 @@ export function levelProgress(points: number) {
   return { level, into, span: POINTS_PER_LEVEL, fraction: into / POINTS_PER_LEVEL }
 }
 
+// Chave de dia no fuso LOCAL (yyyy-MM-dd). Nunca usar toISOString aqui:
+// em UTC-3, das 21h à meia-noite o dia "virava" mais cedo (água, streak e heatmap errados).
 export function todayKey(date = new Date()) {
-  return date.toISOString().slice(0, 10)
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${m}-${d}`
+}
+
+/** Dia local de um timestamp ISO (ex.: startedAt/completedAt vindos do banco). */
+export function dayKeyFromISO(iso: string) {
+  return todayKey(new Date(iso))
 }
 
 export function yesterdayKey(date = new Date()) {
@@ -59,7 +68,7 @@ export function computeBadges(
 
   const focoByDay = new Map<string, number>()
   for (const s of focoSessions) {
-    const day = s.startedAt.slice(0, 10)
+    const day = dayKeyFromISO(s.startedAt)
     focoByDay.set(day, (focoByDay.get(day) ?? 0) + 1)
   }
   const bestDayFoco = Math.max(0, ...Array.from(focoByDay.values()))
