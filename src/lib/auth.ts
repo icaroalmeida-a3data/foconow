@@ -20,7 +20,19 @@ export const useAuth = create<AuthState>((set) => ({
   init: () => {
     if (initialized) return
     initialized = true
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      // Auto-login SÓ em dev, com uma conta de teste comum (RLS vale igual).
+      // Configure VITE_DEV_LOGIN_EMAIL/PASSWORD no .env.local; builds de
+      // produção ignoram isso mesmo que as variáveis existam.
+      if (!data.session && import.meta.env.DEV) {
+        const email = import.meta.env.VITE_DEV_LOGIN_EMAIL as string | undefined
+        const password = import.meta.env.VITE_DEV_LOGIN_PASSWORD as string | undefined
+        if (email && password) {
+          const { error } = await supabase.auth.signInWithPassword({ email, password })
+          if (!error) return // onAuthStateChange assume daqui
+          console.warn('Auto-login de dev falhou:', error.message)
+        }
+      }
       set({ user: data.session?.user ?? null, authLoaded: true })
     })
     supabase.auth.onAuthStateChange((_event, session) => {
