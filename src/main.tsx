@@ -4,6 +4,11 @@ import './index.css'
 import App from './App.tsx'
 import { useAppStore } from './store'
 
+// Em dev, expõe o store no console para depurar (window.__store.getState())
+if (import.meta.env.DEV) {
+  ;(window as unknown as Record<string, unknown>).__store = useAppStore
+}
+
 // Ações do store (salvar tarefa, água etc.) falham silenciosamente se a rede cair;
 // isso garante que o usuário sempre veja um aviso em vez de perder a ação sem saber
 window.addEventListener('unhandledrejection', () => {
