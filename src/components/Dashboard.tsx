@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Timer } from 'lucide-react'
 import { useAppStore } from '../store'
-import { todayKey } from '../lib/rewards'
+import { dayKeyFromISO, todayKey } from '../lib/rewards'
 import { CATEGORY_META, type View } from '../types'
 import { TaskItem } from './TaskItem'
 import { ActivityHeatmap } from './ActivityHeatmap'
@@ -23,19 +23,22 @@ export function Dashboard({ onNavigate }: { onNavigate: (v: View) => void }) {
   const today = todayKey()
 
   const todaysTasks = useMemo(
-    () => tasks.filter((t) => !t.done && (t.dueDate === today || t.createdAt.slice(0, 10) === today)),
+    () => tasks.filter((t) => !t.done && (t.dueDate === today || dayKeyFromISO(t.createdAt) === today)),
     [tasks, today],
   )
 
   const focoMinutesToday = useMemo(
     () =>
       sessions
-        .filter((s) => s.type === 'foco' && s.completed && s.startedAt.slice(0, 10) === today)
+        .filter((s) => s.type === 'foco' && s.completed && dayKeyFromISO(s.startedAt) === today)
         .reduce((sum, s) => sum + s.durationMinutes, 0),
     [sessions, today],
   )
 
-  const tasksDoneToday = useMemo(() => tasks.filter((t) => t.done && t.completedAt?.slice(0, 10) === today).length, [tasks, today])
+  const tasksDoneToday = useMemo(
+    () => tasks.filter((t) => t.done && t.completedAt && dayKeyFromISO(t.completedAt) === today).length,
+    [tasks, today],
+  )
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>()

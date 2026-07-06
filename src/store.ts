@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import * as repo from './lib/repo'
 import type { Category, FocusSession, Priority, RewardsState, SessionType, Settings, Task, WaterEntry } from './types'
 import { DEFAULT_SETTINGS, PRIORITY_META } from './types'
-import { applyStreak, todayKey } from './lib/rewards'
+import { applyStreak, dayKeyFromISO, todayKey } from './lib/rewards'
 import { DURATIONS, focoPoints } from './lib/pomodoro'
 import { notify, playBreakEndChime, playFocusEndChime } from './lib/notifications'
 import { mlOnDay, WATER_GOAL_POINTS, waterGoalMl } from './lib/water'
@@ -64,7 +64,7 @@ interface AppState {
   finishTimer: () => Promise<void>
   finishTimerEarly: () => Promise<void>
 
-  toast: { id: number; kind: 'foco' | 'pausa' | 'agua' | 'inatividade'; title: string; body: string } | null
+  toast: { id: number; kind: 'foco' | 'pausa' | 'agua' | 'inatividade' | 'erro'; title: string; body: string } | null
   clearToast: () => void
 }
 
@@ -338,7 +338,7 @@ async function completeCurrentSession(elapsedMinutes: number) {
   setState({ toast: { id: Date.now(), kind: isFoco ? 'foco' : 'pausa', title, body } })
 
   const focoCountToday = getState().sessions.filter(
-    (s) => s.type === 'foco' && s.completed && s.startedAt.slice(0, 10) === todayKey(),
+    (s) => s.type === 'foco' && s.completed && dayKeyFromISO(s.startedAt) === todayKey(),
   ).length
   const nextMode: SessionType = isFoco ? (focoCountToday % 4 === 0 ? 'pausa-longa' : 'pausa-curta') : 'foco'
   setState({

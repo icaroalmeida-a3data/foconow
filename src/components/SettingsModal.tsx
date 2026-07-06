@@ -111,9 +111,10 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={() => signOut()}
             title={user?.email ? `Sair da conta ${user.email}` : 'Sair da conta'}
-            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-muted hover:bg-bg hover:text-danger"
+            className="flex min-w-0 items-center gap-1.5 px-2 py-1.5 text-xs text-muted hover:bg-bg hover:text-danger"
           >
-            <LogOut size={14} /> Sair{user?.email ? ` (${user.email})` : ''}
+            <LogOut size={14} className="shrink-0" />
+            <span className="truncate">Sair{user?.email ? ` (${user.email})` : ''}</span>
           </button>
           <button
             onClick={save}

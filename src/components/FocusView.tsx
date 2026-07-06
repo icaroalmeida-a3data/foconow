@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { CheckCircle2, Pause, Play, RotateCcw, SkipForward } from 'lucide-react'
 import { useAppStore } from '../store'
 import type { SessionType } from '../types'
-import { todayKey } from '../lib/rewards'
+import { dayKeyFromISO, todayKey } from '../lib/rewards'
 import { DURATION_PRESETS, SESSION_LABELS } from '../lib/pomodoro'
 
 const PROGRESS_SEGMENTS = 16
@@ -39,7 +39,7 @@ export function FocusView() {
   }, [focusTaskId, setFocusTaskId, setTimerTaskId])
 
   const focoCountToday = useMemo(
-    () => sessions.filter((s) => s.type === 'foco' && s.completed && s.startedAt.slice(0, 10) === todayKey()).length,
+    () => sessions.filter((s) => s.type === 'foco' && s.completed && dayKeyFromISO(s.startedAt) === todayKey()).length,
     [sessions],
   )
 

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { AlarmClock, Coffee, Droplets, PartyPopper, X } from 'lucide-react'
+import { AlarmClock, AlertTriangle, Coffee, Droplets, PartyPopper, X } from 'lucide-react'
 import { useAppStore } from '../store'
 
 const KIND_META = {
@@ -7,6 +7,7 @@ const KIND_META = {
   pausa: { icon: Coffee, className: 'bg-focus-light text-focus' },
   agua: { icon: Droplets, className: 'bg-water-light text-water' },
   inatividade: { icon: AlarmClock, className: 'bg-warn-light text-warn' },
+  erro: { icon: AlertTriangle, className: 'bg-danger-light text-danger' },
 } as const
 
 export function Toast() {

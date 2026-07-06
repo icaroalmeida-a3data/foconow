@@ -1,4 +1,5 @@
 import type { FocusSession, Task } from '../types'
+import { dayKeyFromISO } from './rewards'
 
 export interface DayActivity {
   focusMinutes: number
@@ -19,13 +20,13 @@ export function activityByDay(tasks: Task[], sessions: FocusSession[]): Map<stri
   }
   for (const s of sessions) {
     if (s.type !== 'foco' || !s.completed) continue
-    const a = get(s.startedAt.slice(0, 10))
+    const a = get(dayKeyFromISO(s.startedAt))
     a.focusBlocks += 1
     a.focusMinutes += s.durationMinutes
   }
   for (const t of tasks) {
     if (!t.done || !t.completedAt) continue
-    get(t.completedAt.slice(0, 10)).tasksDone += 1
+    get(dayKeyFromISO(t.completedAt)).tasksDone += 1
   }
   return map
 }
