@@ -14,11 +14,12 @@ export function Toast() {
   const toast = useAppStore((s) => s.toast)
   const clearToast = useAppStore((s) => s.clearToast)
   const addWater = useAppStore((s) => s.addWater)
+  const extendFocus = useAppStore((s) => s.extendFocus)
 
   useEffect(() => {
     if (!toast) return
-    // o aviso de água fica mais tempo na tela para dar chance de confirmar o copo
-    const timeout = setTimeout(clearToast, toast.kind === 'agua' ? 20000 : 5000)
+    // avisos com ação (confirmar copo, estender foco) ficam mais tempo na tela
+    const timeout = setTimeout(clearToast, toast.kind === 'agua' ? 20000 : toast.offerExtend ? 15000 : 5000)
     return () => clearTimeout(timeout)
   }, [toast, clearToast])
 
@@ -33,6 +34,20 @@ export function Toast() {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-ink">{toast.title}</p>
         <p className="text-xs text-muted">{toast.body}</p>
+        {toast.offerExtend && (
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs text-muted">No embalo?</span>
+            {[5, 10].map((min) => (
+              <button
+                key={min}
+                onClick={() => extendFocus(min)}
+                className="pixel-btn bg-brand px-2.5 py-1 text-xs font-medium text-white"
+              >
+                +{min} min
+              </button>
+            ))}
+          </div>
+        )}
         {toast.kind === 'agua' && (
           <button
             onClick={() => {
