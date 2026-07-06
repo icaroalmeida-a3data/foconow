@@ -1,46 +1,79 @@
-# FocoNow
+# 🍅 FocoNow
 
-Pomodoro + tarefas com visual pixel art. PWA instalável, com dados e autenticação no [Supabase](https://supabase.com) e deploy na [Vercel](https://vercel.com).
+**Pomodoro + tarefas + hidratação, com visual pixel art 8-bit.**
+Feito para quem vive entre reuniões e precisa proteger tempo para trabalho profundo — montar propostas, desenhar arquiteturas, escrever documentação — sem esquecer de beber água no caminho.
 
-## Stack
+![Painel do dia](docs/dashboard.png)
 
-- React 19 + TypeScript + Vite
-- Tailwind CSS 4, Zustand
-- Supabase (Postgres + Auth, com Row Level Security)
-- PWA (manifest + service worker + botão "Instalar app")
+## ✨ O que ele faz
 
-## Configurar o Supabase (uma vez)
+- **⏱️ Blocos de foco (Pomodoro)** — 25/45/60/90 min ou duração livre, vinculados a uma tarefa. Terminou no embalo? O toast oferece **+5/+10 min** para emendar sem quebrar o ritmo.
+- **📋 Tarefas com contexto** — categorias (proposta, reunião, arquitetura, documentação, admin), prioridade, prazo e estimativa em pomodoros.
+- **💧 Hidratação gamificada** — meta diária calculada pelo seu peso (35 ml/kg), lembretes no horário de trabalho e pontos ao bater a meta.
+- **🔥 Recompensas** — pontos, níveis, streak de dias ativos e conquistas (badges) por marcos de foco, tarefas e água.
+- **📊 Heatmap de atividade** — estilo GitHub, com o histórico detalhado de cada dia a um clique.
+- **🔔 Lembretes inteligentes** — água a cada 45 min e um "cadê você?" se o app ficar ocioso, sempre respeitando seu horário de trabalho.
+- **📱 PWA instalável** — botão "Instalar app" no header; funciona como app no desktop e no celular.
+- **☁️ Seus dados na nuvem** — autenticação e armazenamento no Supabase com Row Level Security: cada usuário só acessa o que é seu.
+
+| Bloco de foco | Tarefas |
+|---|---|
+| ![Foco](docs/foco.png) | ![Tarefas](docs/tarefas.png) |
+
+## 🧱 Stack
+
+- **React 19** + **TypeScript** + **Vite 8**
+- **Tailwind CSS 4** (tema pixel art custom) + **Zustand**
+- **Supabase** (Postgres + Auth, RLS em todas as tabelas)
+- **PWA** (manifest + service worker com cache offline)
+- Deploy na **Vercel**
+
+## 🚀 Rodando o seu
+
+### 1. Supabase (uma vez)
 
 1. Crie um projeto em [supabase.com/dashboard](https://supabase.com/dashboard).
-2. Abra **SQL Editor**, cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**. Isso cria as tabelas (`tasks`, `sessions`, `rewards`, `settings`, `water_entries`) já com RLS — cada usuário só acessa os próprios dados.
-3. Em **Project Settings → API**, copie a **Project URL** e a **anon public key**.
-4. (Opcional) Em **Authentication → Sign In / Up → Email**, desative "Confirm email" se quiser entrar sem confirmar o e-mail. Se deixar ativado, configure também a **Site URL** (Authentication → URL Configuration) com a URL do app na Vercel, para o link de confirmação redirecionar certo.
+2. No **SQL Editor**, execute o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) — cria as tabelas com as políticas de RLS.
+3. Em **Project Settings → API**, copie a **Project URL** e a **publishable/anon key**.
+4. (Opcional) Em **Authentication → Sign In / Up → Email**, desative "Confirm email" para cadastro instantâneo. Se mantiver ativado, configure a **Site URL** (Authentication → URL Configuration) com o domínio do app.
 
-## Rodar localmente
+### 2. Local
 
 ```bash
-cp .env.example .env.local   # e preencha com a URL e a anon key do Supabase
+cp .env.example .env.local   # preencha com a URL e a chave do Supabase
 npm install
 npm run dev
 ```
 
-## Deploy na Vercel
+#### Auto-login em dev (opcional)
 
-1. Suba o repositório para o GitHub (ou use `npx vercel` direto da pasta).
-2. Na Vercel, **Add New → Project**, importe o repositório. O framework (Vite) é detectado sozinho — build `npm run build`, output `dist`.
-3. Em **Settings → Environment Variables**, adicione:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-4. Deploy. O [`vercel.json`](vercel.json) já cuida do rewrite de SPA e dos headers do service worker.
-5. Volte ao Supabase e ajuste a **Site URL** (Authentication → URL Configuration) para a URL da Vercel.
+Para pular a tela de login durante o desenvolvimento, crie uma conta de teste
+(Dashboard → Authentication → Users → **Add user**, marcando **Auto Confirm User**)
+e adicione ao `.env.local`:
 
-> A anon key é pública por design — a segurança vem das políticas de RLS no banco.
+```bash
+VITE_DEV_LOGIN_EMAIL=dev@teste.local
+VITE_DEV_LOGIN_PASSWORD=uma-senha-de-teste
+```
 
-## Migração de dados antigos
+Vale só para `npm run dev` — builds de produção ignoram essas variáveis. Use uma
+conta descartável (o RLS se aplica a ela como a qualquer outra), nunca sua conta real.
 
-Antes do Supabase, o app guardava tudo no IndexedDB do navegador. No primeiro login em cada navegador, se a conta ainda estiver vazia e houver dados locais, eles são importados automaticamente para o Supabase (tarefas, sessões, água, pontos e ajustes).
+### 3. Vercel
 
-## Notas
+1. Importe o repositório na Vercel (framework Vite é detectado sozinho).
+2. Em **Settings → Environment Variables**, adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+3. Deploy — o [`vercel.json`](vercel.json) já cuida do rewrite de SPA, cache do service worker e headers de segurança.
+4. Ajuste a **Site URL** no Supabase para o domínio da Vercel.
 
-- O service worker só é registrado no build de produção; o prompt de instalação (PWA) também só aparece em produção ou `npm run preview`.
-- O app exige login; sem as variáveis de ambiente ele mostra uma tela de configuração pendente.
+> A chave publishable/anon é pública por design — a segurança vem das políticas de RLS no banco. A chave `service_role` nunca deve aparecer no front.
+
+## 📝 Notas
+
+- O service worker (e o prompt de instalação do PWA) só atua em produção ou `npm run preview`.
+- Migração: quem usava a versão antiga com dados locais (IndexedDB) tem tudo importado automaticamente para o Supabase no primeiro login.
+- O dia do app segue o **fuso local** — água, streak e heatmap viram à meia-noite de verdade, não às 21h 🙂
+
+---
+
+Feito com 🍅 e água — e com [Claude Code](https://claude.com/claude-code) no par.
