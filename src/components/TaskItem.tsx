@@ -37,7 +37,7 @@ export function TaskItem({ task, onNavigate }: { task: Task; onNavigate: (v: Vie
             if (task.id) setFocusTaskId(task.id)
             onNavigate('focus')
           }}
-          className="p-2 text-muted opacity-0 transition-opacity hover:bg-focus-light hover:text-focus group-hover:opacity-100"
+          className="p-2 text-muted transition-opacity hover:bg-focus-light hover:text-focus pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100"
         >
           <Timer size={16} />
         </button>
@@ -45,7 +45,7 @@ export function TaskItem({ task, onNavigate }: { task: Task; onNavigate: (v: Vie
       <button
         title="Excluir"
         onClick={() => task.id && deleteTask(task.id)}
-        className="p-2 text-muted opacity-0 transition-opacity hover:bg-danger-light hover:text-danger group-hover:opacity-100"
+        className="p-2 text-muted transition-opacity hover:bg-danger-light hover:text-danger pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100"
       >
         <Trash2 size={16} />
       </button>

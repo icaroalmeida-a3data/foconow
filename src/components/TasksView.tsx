@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { useAppStore } from '../store'
 import { CATEGORY_META, PRIORITY_META, type Category, type Priority, type View } from '../types'
 import { TaskItem } from './TaskItem'
+import { Stepper } from './Stepper'
 
 export function TasksView({ onNavigate }: { onNavigate: (v: View) => void }) {
   const tasks = useAppStore((s) => s.tasks)
@@ -70,20 +71,13 @@ export function TasksView({ onNavigate }: { onNavigate: (v: View) => void }) {
             onChange={(e) => setDueDate(e.target.value)}
             className="pixel-input px-2 py-1.5 text-sm text-ink"
           />
-          <label
+          <div
             title="Pomodoros estimados: quantos blocos de ~25 min de foco essa tarefa deve levar"
             className="flex items-center gap-1.5 text-sm text-muted"
           >
             <span>🍅 Pomodoros</span>
-            <input
-              type="number"
-              min={1}
-              max={12}
-              value={estimatedPomodoros}
-              onChange={(e) => setEstimatedPomodoros(Number(e.target.value) || 1)}
-              className="pixel-input w-14 px-2 py-1.5 text-sm text-ink"
-            />
-          </label>
+            <Stepper value={estimatedPomodoros} min={1} max={12} onChange={setEstimatedPomodoros} />
+          </div>
           <button
             type="submit"
             className="pixel-btn ml-auto flex items-center gap-1.5 bg-brand px-3 py-1.5 text-sm font-medium text-white"
