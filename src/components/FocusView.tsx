@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, Pause, Play, RotateCcw, SkipForward } from 'lucide-react'
 import { useAppStore } from '../store'
 import type { SessionType } from '../types'
@@ -30,6 +30,9 @@ export function FocusView() {
   const finishTimerEarly = useAppStore((s) => s.finishTimerEarly)
 
   const pendingTasks = useMemo(() => tasks.filter((t) => !t.done), [tasks])
+
+  // Rascunho local para permitir apagar o campo enquanto digita, sem o valor voltar pra 1
+  const [durationDraft, setDurationDraft] = useState<string | null>(null)
 
   useEffect(() => {
     if (focusTaskId) {
@@ -100,7 +103,10 @@ export function FocusView() {
             {DURATION_PRESETS.map((p) => (
               <button
                 key={p}
-                onClick={() => setTimerDurationMinutes(p)}
+                onClick={() => {
+                  setDurationDraft(null)
+                  setTimerDurationMinutes(p)
+                }}
                 className={`border-2 px-3 py-1 text-xs font-medium ${
                   durationMinutes === p ? 'border-ink bg-focus text-white' : 'border-ink bg-surface text-muted hover:bg-focus-light'
                 }`}
@@ -110,10 +116,16 @@ export function FocusView() {
             ))}
             <input
               type="number"
+              inputMode="numeric"
               min={1}
               max={180}
-              value={durationMinutes}
-              onChange={(e) => setTimerDurationMinutes(Number(e.target.value) || 1)}
+              value={durationDraft ?? durationMinutes}
+              onChange={(e) => {
+                setDurationDraft(e.target.value)
+                const n = Number(e.target.value)
+                if (e.target.value && n >= 1) setTimerDurationMinutes(Math.min(180, Math.floor(n)))
+              }}
+              onBlur={() => setDurationDraft(null)}
               title="Duração personalizada em minutos (ex: 60 para uma reunião de 1h)"
               className="pixel-input w-16 px-2 py-1 text-center text-xs text-ink"
             />

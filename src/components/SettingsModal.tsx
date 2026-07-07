@@ -76,6 +76,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 Peso
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={20}
                   max={300}
                   placeholder="kg"
@@ -89,6 +90,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 Copo de
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={100}
                   max={1000}
                   step={50}
