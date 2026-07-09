@@ -29,6 +29,46 @@
 
   --color-water: #3d7a99;
   --color-water-light: #ddeef2;
+
+  --color-input-focus: #ffffff;
+}
+
+:root {
+  color-scheme: light;
+}
+
+/* Tema escuro pixel art — carvão quente no fundo, tinta creme e coral aceso.
+   Os pares X / X-light invertem de papel: X vira a cor legível (texto/ícone)
+   e X-light vira o fundo escuro do chip. */
+.dark {
+  color-scheme: dark;
+
+  --color-bg: #211e19;
+  --color-surface: #2c2822;
+  --color-border: #e9e3d2;
+  --color-ink: #e9e3d2;
+  --color-muted: #a29a85;
+
+  --color-brand: #e08b63;
+  --color-brand-light: #482c1e;
+  --color-brand-dark: #f2bd9f;
+
+  --color-success: #9abe88;
+  --color-success-light: #29331f;
+
+  --color-warn: #d7b25c;
+  --color-warn-light: #3a3016;
+
+  --color-danger: #e28a7a;
+  --color-danger-light: #40231d;
+
+  --color-focus: #e0794d;
+  --color-focus-light: #402417;
+
+  --color-water: #86bcd3;
+  --color-water-light: #1f3540;
+
+  --color-input-focus: #38332b;
 }
 
 * {
@@ -88,7 +128,7 @@ body {
 }
 
 .pixel-input:focus {
-  background: #fff;
+  background: var(--color-input-focus);
   box-shadow: 2px 2px 0 var(--color-brand);
 }
 
