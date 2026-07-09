@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { useAppStore } from './store'
+import { initTheme } from './lib/theme'
+
+// Antes do primeiro render, para não piscar o tema claro em quem usa escuro
+initTheme()
 
 // Em dev, expõe o store no console para depurar (window.__store.getState())
 if (import.meta.env.DEV) {
