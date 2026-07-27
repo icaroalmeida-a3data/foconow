@@ -3,6 +3,7 @@ import { ChevronRight, Plus } from 'lucide-react'
 import { useAppStore } from '../store'
 import { CATEGORY_META, PRIORITY_META, type Category, type Priority, type View } from '../types'
 import { TaskItem } from './TaskItem'
+import { Stepper } from './Stepper'
 
 const PRIORITIES = Object.keys(PRIORITY_META) as Priority[]
 
@@ -106,26 +107,10 @@ export function TasksView({ onNavigate }: { onNavigate: (v: View) => void }) {
               />
               <div
                 title="Pomodoros estimados: quantos blocos de ~25 min essa tarefa deve levar"
-                className="flex h-[44px] shrink-0 items-center border-2 border-ink bg-surface px-1.5"
+                className="flex h-[44px] shrink-0 items-center gap-1.5 border-2 border-ink bg-surface px-2"
               >
-                <span className="px-1 text-sm">🍅</span>
-                <button
-                  type="button"
-                  onClick={() => setEstimatedPomodoros((n) => Math.max(1, n - 1))}
-                  aria-label="Menos um pomodoro"
-                  className="h-full w-[36px] text-lg text-ink"
-                >
-                  –
-                </button>
-                <span className="w-5 text-center text-sm tabular-nums">{estimatedPomodoros}</span>
-                <button
-                  type="button"
-                  onClick={() => setEstimatedPomodoros((n) => Math.min(12, n + 1))}
-                  aria-label="Mais um pomodoro"
-                  className="h-full w-[36px] text-lg text-ink"
-                >
-                  +
-                </button>
+                <span className="text-sm">🍅</span>
+                <Stepper value={estimatedPomodoros} min={1} max={12} onChange={setEstimatedPomodoros} />
               </div>
             </div>
           </div>

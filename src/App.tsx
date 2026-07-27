@@ -11,6 +11,7 @@ import { HistoryView } from './components/HistoryView'
 import { RewardsView } from './components/RewardsView'
 import { Onboarding } from './components/Onboarding'
 import { SettingsModal } from './components/SettingsModal'
+import { ThemeToggle } from './components/ThemeToggle'
 import { FocusMiniStatus } from './components/FocusMiniStatus'
 import { Toast } from './components/Toast'
 import { InstallButton } from './components/InstallButton'
@@ -154,6 +155,7 @@ function App() {
             {view !== 'focus' && <FocusMiniStatus onNavigate={setView} />}
             <StatusBar />
             <InstallButton />
+            <ThemeToggle />
             <button
               onClick={() => setSettingsOpen(true)}
               title="Ajustes: horário de trabalho e hidratação"

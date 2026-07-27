@@ -58,13 +58,21 @@ interface AppState {
   setTimerDurationMinutes: (minutes: number) => void
   setTimerTaskId: (id: number | null) => void
   startTimer: () => Promise<void>
+  extendFocus: (minutes: number) => Promise<void>
   pauseTimer: () => void
   resetTimer: () => Promise<void>
   skipTimer: () => Promise<void>
   finishTimer: () => Promise<void>
   finishTimerEarly: () => Promise<void>
 
-  toast: { id: number; kind: 'foco' | 'pausa' | 'agua' | 'inatividade' | 'erro'; title: string; body: string } | null
+  toast: {
+    id: number
+    kind: 'foco' | 'pausa' | 'agua' | 'inatividade' | 'erro'
+    title: string
+    body: string
+    /** mostra os botões de +5/+10 min ao fim de um bloco de foco */
+    offerExtend?: boolean
+  } | null
   clearToast: () => void
 }
 
@@ -274,6 +282,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     }, 250)
   },
 
+  // Emenda mais alguns minutos de foco logo após um bloco terminar, sem
+  // quebrar o ritmo: mantém a mesma tarefa e registra como um novo bloco
+  extendFocus: async (minutes) => {
+    const state = get()
+    if (state.timerRunning) return
+    set({
+      timerMode: 'foco',
+      timerDurationMinutes: minutes,
+      timerSecondsLeft: minutes * 60,
+      toast: null,
+    })
+    await get().startTimer()
+  },
+
   pauseTimer: () => {
     clearTicking()
     set({ timerRunning: false })
@@ -335,7 +357,7 @@ async function completeCurrentSession(elapsedMinutes: number) {
   if (isFoco) playFocusEndChime()
   else playBreakEndChime()
   notify(title, body)
-  setState({ toast: { id: Date.now(), kind: isFoco ? 'foco' : 'pausa', title, body } })
+  setState({ toast: { id: Date.now(), kind: isFoco ? 'foco' : 'pausa', title, body, offerExtend: isFoco } })
 
   const focoCountToday = getState().sessions.filter(
     (s) => s.type === 'foco' && s.completed && dayKeyFromISO(s.startedAt) === todayKey(),

@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
-import { HelpCircle, Settings as SettingsIcon, X } from 'lucide-react'
+import { HelpCircle, Moon, Settings as SettingsIcon, Sun, X } from 'lucide-react'
 import { useAppStore } from '../store'
 import { levelProgress } from '../lib/rewards'
+import { applyTheme, useTheme, type Theme } from '../lib/theme'
 import { InstallButton } from './InstallButton'
 
 /**
@@ -19,6 +20,7 @@ export function MoreSheet({
 }) {
   const rewards = useAppStore((s) => s.rewards)
   const { level } = levelProgress(rewards.points)
+  const theme = useTheme()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -73,6 +75,17 @@ export function MoreSheet({
         >
           <SettingsIcon size={20} />
           Ajustes de trabalho e água
+        </button>
+
+        <button
+          onClick={() => {
+            const next: Theme = theme === 'dark' ? 'light' : 'dark'
+            applyTheme(next)
+          }}
+          className={rowClass}
+        >
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
         </button>
 
         <InstallButton variant="row" />

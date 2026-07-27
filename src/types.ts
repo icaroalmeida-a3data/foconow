@@ -79,7 +79,8 @@ export const PRIORITY_META: Record<
   Priority,
   { label: string; weight: number; points: number; color: string; bg: string }
 > = {
-  alta: { label: 'Alta', weight: 3, points: 25, color: '#c14a3a', bg: '#f6ddd8' },
-  media: { label: 'Média', weight: 2, points: 15, color: '#c15f3c', bg: '#f4d9cb' },
-  baixa: { label: 'Baixa', weight: 1, points: 10, color: '#7a7462', bg: '#f0eee6' },
+  // Tokens, não hex: os pares X / X-light invertem sozinhos no tema escuro
+  alta: { label: 'Alta', weight: 3, points: 25, color: 'var(--color-danger)', bg: 'var(--color-danger-light)' },
+  media: { label: 'Média', weight: 2, points: 15, color: 'var(--color-focus)', bg: 'var(--color-focus-light)' },
+  baixa: { label: 'Baixa', weight: 1, points: 10, color: 'var(--color-muted)', bg: 'var(--color-bg)' },
 }
