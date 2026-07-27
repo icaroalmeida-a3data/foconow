@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { applyTheme, getInitialTheme, type Theme } from '../lib/theme'
+import { applyTheme, useTheme, type Theme } from '../lib/theme'
 
 function PixelSun() {
   return (
@@ -38,12 +37,11 @@ function PixelMoon() {
 }
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme)
+  const theme = useTheme()
 
   const toggle = () => {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
     applyTheme(next)
-    setTheme(next)
   }
 
   return (

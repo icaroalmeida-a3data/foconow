@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { HelpCircle, Settings as SettingsIcon } from 'lucide-react'
-import { Sidebar } from './components/Sidebar'
+import { Ellipsis, HelpCircle, Settings as SettingsIcon } from 'lucide-react'
+import { PixelLogo, Sidebar } from './components/Sidebar'
+import { BottomTabBar } from './components/BottomTabBar'
+import { MoreSheet } from './components/MoreSheet'
 import { StatusBar } from './components/StatusBar'
 import { Dashboard } from './components/Dashboard'
 import { TasksView } from './components/TasksView'
@@ -35,6 +37,7 @@ function App() {
   const [view, setView] = useState<View>('dashboard')
   const [onboardingOpen, setOnboardingOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const load = useAppStore((s) => s.load)
   const loaded = useAppStore((s) => s.loaded)
@@ -116,15 +119,39 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen flex-col md:flex-row">
+    <div className="flex h-dvh flex-col md:flex-row">
       {onboardingOpen && <Onboarding onClose={() => setOnboardingOpen(false)} />}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {moreOpen && (
+        <MoreSheet
+          onClose={() => setMoreOpen(false)}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenOnboarding={() => setOnboardingOpen(true)}
+        />
+      )}
       <Toast />
       <Sidebar view={view} onChange={setView} />
-      <main className="flex-1 overflow-y-auto">
-        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b-3 border-ink bg-surface px-4 py-3 md:px-6 md:py-4">
-          <h1 className="font-pixel text-xs text-ink md:text-sm">{TITLES[view]}</h1>
-          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex h-[56px] shrink-0 items-center justify-between gap-3 border-b-3 border-ink bg-surface px-4 md:h-auto md:px-6 md:py-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <PixelLogo className="size-[22px] shrink-0 md:hidden" />
+            <h1 className="truncate font-pixel text-[11px] text-ink md:text-sm">{TITLES[view]}</h1>
+          </div>
+
+          {/* Celular: só nível e streak sobram; o resto mora no bottom sheet do "⋯". */}
+          <div className="flex shrink-0 items-center gap-2 md:hidden">
+            <StatusBar variant="compact" />
+            <button
+              onClick={() => setMoreOpen(true)}
+              aria-label="Mais opções"
+              className="pixel-btn flex size-[44px] items-center justify-center bg-surface text-ink"
+            >
+              <Ellipsis size={20} />
+            </button>
+          </div>
+
+          <div className="hidden flex-wrap items-center gap-3 md:flex">
             {view !== 'focus' && <FocusMiniStatus onNavigate={setView} />}
             <StatusBar />
             <InstallButton />
@@ -145,14 +172,18 @@ function App() {
             </button>
           </div>
         </header>
-        <div className="p-4 md:p-6">
+
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
           {view === 'dashboard' && <Dashboard onNavigate={setView} />}
           {view === 'tasks' && <TasksView onNavigate={setView} />}
           {view === 'focus' && <FocusView />}
           {view === 'history' && <HistoryView />}
           {view === 'rewards' && <RewardsView />}
-        </div>
-      </main>
+        </main>
+
+        {view !== 'focus' && <FocusMiniStatus onNavigate={setView} variant="bar" />}
+        <BottomTabBar view={view} onChange={setView} />
+      </div>
     </div>
   )
 }

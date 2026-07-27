@@ -2,26 +2,36 @@ import { useState } from 'react'
 import { MonitorDown, Share, SquarePlus, X } from 'lucide-react'
 import { useInstallPrompt } from '../lib/installPrompt'
 
-export function InstallButton() {
+/**
+ * `chip` é o botão compacto do header no desktop; `row` é a linha de 48px
+ * usada dentro do bottom sheet do celular.
+ */
+export function InstallButton({ variant = 'chip' }: { variant?: 'chip' | 'row' }) {
   const { installed, canPrompt, isIOS, install } = useInstallPrompt()
   const [iosHelpOpen, setIosHelpOpen] = useState(false)
 
   // Já instalado ou navegador sem suporte: não mostra nada
   if (installed || (!canPrompt && !isIOS)) return null
 
+  const isRow = variant === 'row'
+
   return (
     <>
       <button
         onClick={() => (canPrompt ? install() : setIosHelpOpen(true))}
         title="Instalar o FocoNow como aplicativo"
-        className="pixel-btn flex items-center gap-1.5 bg-surface p-1.5 text-muted hover:bg-bg hover:text-ink"
+        className={
+          isRow
+            ? 'flex h-[48px] items-center gap-3 border-2 border-ink bg-surface px-3 text-sm font-medium text-ink hover:bg-bg'
+            : 'pixel-btn flex items-center gap-1.5 bg-surface p-1.5 text-muted hover:bg-bg hover:text-ink'
+        }
       >
-        <MonitorDown size={18} />
-        <span className="hidden text-sm font-medium lg:inline">Instalar app</span>
+        <MonitorDown size={isRow ? 20 : 18} />
+        {isRow ? 'Instalar app' : <span className="hidden text-sm font-medium lg:inline">Instalar app</span>}
       </button>
 
       {iosHelpOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
           <div className="pixel-panel animate-pop-in relative w-full max-w-sm bg-surface p-6">
             <button
               onClick={() => setIosHelpOpen(false)}
