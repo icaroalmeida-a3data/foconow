@@ -2,9 +2,34 @@ import { Flame, Star } from 'lucide-react'
 import { useAppStore } from '../store'
 import { levelProgress } from '../lib/rewards'
 
-export function StatusBar() {
+/**
+ * `compact` é o que sobra no header do celular — só nível e streak.
+ * Pontos e barra de progresso vão para o bottom sheet do "⋯".
+ */
+export function StatusBar({ variant = 'full' }: { variant?: 'full' | 'compact' }) {
   const rewards = useAppStore((s) => s.rewards)
   const { level, fraction } = levelProgress(rewards.points)
+
+  if (variant === 'compact') {
+    return (
+      <>
+        <span
+          title={`Nível ${level}`}
+          className="flex items-center gap-1.5 border-2 border-ink bg-brand-light px-2 py-1 text-sm font-medium text-brand-dark"
+        >
+          <Star size={13} className="fill-brand-dark text-brand-dark" />
+          {level}
+        </span>
+        <span
+          title={`${rewards.streakDays} dias seguidos`}
+          className="flex items-center gap-1.5 border-2 border-ink bg-warn-light px-2 py-1 text-sm font-medium text-warn"
+        >
+          <Flame size={13} className={rewards.streakDays > 0 ? 'fill-warn text-warn' : 'text-muted'} />
+          {rewards.streakDays}
+        </span>
+      </>
+    )
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-2 md:gap-3">

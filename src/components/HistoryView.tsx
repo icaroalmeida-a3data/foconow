@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckSquare, Coffee, Timer } from 'lucide-react'
+import { CheckSquare, ChevronLeft, ChevronRight, Coffee, Timer } from 'lucide-react'
 import { useAppStore } from '../store'
 import { SESSION_LABELS } from '../lib/pomodoro'
 import { dayKeyFromISO, todayKey } from '../lib/rewards'
@@ -26,6 +26,14 @@ function formatTime(iso: string) {
 
 function formatDay(key: string) {
   return `${key.slice(8, 10)}/${key.slice(5, 7)}`
+}
+
+/** Soma dias numa chave yyyy-MM-dd sem passar por UTC (evita pular um dia por fuso). */
+function shiftDayKey(key: string, days: number) {
+  const [y, m, d] = key.split('-').map(Number)
+  const date = new Date(y, m - 1, d + days)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 export function HistoryView() {
@@ -91,16 +99,35 @@ export function HistoryView() {
   const monthTitle = `${MONTH_NAMES[Number(monthKey.slice(5, 7)) - 1]} de ${monthKey.slice(0, 4)}`
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-pixel text-[10px] text-muted">Atividades do dia</h2>
-        <input
-          type="date"
-          value={date}
-          max={todayKey()}
-          onChange={(e) => e.target.value && setDate(e.target.value)}
-          className="pixel-input px-2 py-1 text-sm text-ink"
-        />
+    <div className="mx-auto flex max-w-2xl flex-col gap-4 md:gap-6">
+      {/* Navegar dia a dia com o polegar, sem perder o salto direto pelo seletor. */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setDate(shiftDayKey(date, -1))}
+          aria-label="Dia anterior"
+          className="flex size-[44px] shrink-0 items-center justify-center border-2 border-ink bg-surface text-ink"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <label className="flex h-[44px] flex-1 items-center justify-center gap-2 border-2 border-ink bg-surface px-2 text-sm text-ink">
+          <input
+            type="date"
+            value={date}
+            max={todayKey()}
+            onChange={(e) => e.target.value && setDate(e.target.value)}
+            aria-label="Dia exibido"
+            className="min-w-0 bg-transparent text-sm text-ink"
+          />
+          {date === todayKey() && <span className="shrink-0 text-muted">· hoje</span>}
+        </label>
+        <button
+          onClick={() => setDate(shiftDayKey(date, 1))}
+          disabled={date >= todayKey()}
+          aria-label="Próximo dia"
+          className="flex size-[44px] shrink-0 items-center justify-center border-2 border-ink bg-surface text-ink disabled:opacity-40"
+        >
+          <ChevronRight size={20} />
+        </button>
       </div>
 
       <section className="pixel-panel flex flex-col gap-1 bg-surface p-4">
@@ -128,18 +155,18 @@ export function HistoryView() {
 
       <h2 className="font-pixel text-[10px] text-muted">Resumo de {monthTitle}</h2>
 
-      <section className="grid grid-cols-3 gap-4">
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-ink">{totals.focusMinutes}</p>
-          <p className="mt-1 text-xs text-muted">min de foco</p>
+      <section className="grid grid-cols-3 gap-2.5 md:gap-4">
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-ink md:text-lg">{totals.focusMinutes}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">min</p>
         </div>
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-ink">{totals.focusBlocks}</p>
-          <p className="mt-1 text-xs text-muted">blocos 🍅</p>
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-ink md:text-lg">{totals.focusBlocks}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">blocos 🍅</p>
         </div>
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-ink">{totals.tasksDone}</p>
-          <p className="mt-1 text-xs text-muted">tarefas concluídas</p>
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-ink md:text-lg">{totals.tasksDone}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">tarefas</p>
         </div>
       </section>
 
@@ -149,16 +176,18 @@ export function HistoryView() {
           <button
             key={key}
             onClick={() => setDate(key)}
-            className={`flex items-center gap-3 border-2 px-2 py-1.5 text-left ${
+            className={`flex flex-col gap-1.5 border-2 px-2 py-2 text-left ${
               key === date ? 'border-ink bg-brand-light' : 'border-transparent hover:bg-bg'
             }`}
           >
-            <span className="w-12 shrink-0 text-sm font-medium text-ink">{formatDay(key)}</span>
-            <span className="h-3 flex-1 border border-ink bg-bg">
-              <span className="block h-full bg-brand" style={{ width: `${(a.focusMinutes / maxMinutes) * 100}%` }} />
+            <span className="flex items-baseline justify-between gap-2 text-sm">
+              <span className="font-medium text-ink">{formatDay(key)}</span>
+              <span className="text-xs text-muted">
+                {a.focusMinutes} min · 🍅 {a.focusBlocks} · ✓ {a.tasksDone}
+              </span>
             </span>
-            <span className="shrink-0 text-xs text-muted">
-              {a.focusMinutes} min · 🍅 {a.focusBlocks} · ✓ {a.tasksDone}
+            <span className="block h-3 w-full border border-ink bg-bg">
+              <span className="block h-full bg-brand" style={{ width: `${(a.focusMinutes / maxMinutes) * 100}%` }} />
             </span>
           </button>
         ))}

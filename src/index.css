@@ -107,6 +107,20 @@ body {
   animation: pop-in 0.25s steps(4);
 }
 
+/* Bottom sheet sobe da borda; escalar do centro deformaria a faixa inteira */
+@keyframes sheet-up {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-sheet-up {
+  animation: sheet-up 0.2s steps(4);
+}
+
 /* Piscar de borda em degraus, como sprite de jogo antigo */
 @keyframes pixel-blink {
   0%,

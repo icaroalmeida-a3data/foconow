@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { Timer } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useAppStore } from '../store'
 import { dayKeyFromISO, todayKey } from '../lib/rewards'
-import { CATEGORY_META, type View } from '../types'
+import type { View } from '../types'
 import { TaskItem } from './TaskItem'
 import { ActivityHeatmap } from './ActivityHeatmap'
 import { WaterWidget } from './WaterWidget'
@@ -17,7 +17,6 @@ const MESSAGES = [
 export function Dashboard({ onNavigate }: { onNavigate: (v: View) => void }) {
   const tasks = useAppStore((s) => s.tasks)
   const sessions = useAppStore((s) => s.sessions)
-  const rewards = useAppStore((s) => s.rewards)
   const setHistoryDate = useAppStore((s) => s.setHistoryDate)
 
   const today = todayKey()
@@ -40,42 +39,43 @@ export function Dashboard({ onNavigate }: { onNavigate: (v: View) => void }) {
     [tasks, today],
   )
 
-  const byCategory = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const t of todaysTasks) map.set(t.category, (map.get(t.category) ?? 0) + 1)
-    return map
-  }, [todaysTasks])
-
   const message = MESSAGES[new Date().getDate() % MESSAGES.length]
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <div className="pixel-panel bg-brand-light p-5">
-        <p className="text-sm font-medium text-brand-dark">{message}</p>
+    <div className="mx-auto flex max-w-3xl flex-col gap-4 md:gap-6">
+      <div className="pixel-panel bg-brand-light p-4 md:p-5">
+        <p className="text-pretty text-sm font-medium text-brand-dark">{message}</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-ink">{todaysTasks.length}</p>
-          <p className="mt-1 text-xs text-muted">tarefas para hoje</p>
+      <div className="grid grid-cols-3 gap-2.5 md:gap-4">
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-ink md:text-lg">{todaysTasks.length}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">tarefas hoje</p>
         </div>
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-ink">{focoMinutesToday}</p>
-          <p className="mt-1 text-xs text-muted">min de foco hoje</p>
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-focus md:text-lg">{focoMinutesToday}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">min de foco</p>
         </div>
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-ink">{tasksDoneToday}</p>
-          <p className="mt-1 text-xs text-muted">concluídas hoje</p>
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-success md:text-lg">{tasksDoneToday}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">concluídas</p>
         </div>
       </div>
 
       <WaterWidget />
 
       <div className="pixel-panel bg-surface p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-pixel text-[10px] text-muted">Atividade</h2>
-          <button onClick={() => onNavigate('history')} className="text-xs font-medium text-brand-dark hover:underline">
-            Ver histórico →
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="font-pixel text-[10px] text-muted">
+            <span className="md:hidden">Últimas 13 semanas</span>
+            <span className="hidden md:inline">Atividade</span>
+          </h2>
+          <button
+            onClick={() => onNavigate('history')}
+            className="-my-2.5 flex items-center gap-1 py-2.5 text-xs font-medium text-brand-dark hover:underline"
+          >
+            Histórico
+            <ChevronRight size={14} />
           </button>
         </div>
         <ActivityHeatmap
@@ -86,45 +86,23 @@ export function Dashboard({ onNavigate }: { onNavigate: (v: View) => void }) {
         />
       </div>
 
-      {byCategory.size > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {Array.from(byCategory.entries()).map(([cat, count]) => {
-            const meta = CATEGORY_META[cat as keyof typeof CATEGORY_META]
-            return (
-              <span
-                key={cat}
-                className="border px-3 py-1 text-xs font-medium"
-                style={{ color: meta.color, background: meta.bg, borderColor: meta.color }}
-              >
-                {meta.label} · {count}
-              </span>
-            )
-          })}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h2 className="font-pixel text-[10px] text-muted">Agenda de hoje</h2>
-        <button
-          onClick={() => onNavigate('focus')}
-          className="pixel-btn flex items-center gap-1.5 bg-focus px-3 py-1.5 text-sm font-medium text-white"
-        >
-          <Timer size={15} /> Iniciar foco
-        </button>
+        <span className="text-xs text-muted">
+          {todaysTasks.length} {todaysTasks.length === 1 ? 'tarefa' : 'tarefas'}
+        </span>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5">
         {todaysTasks.length === 0 && (
-          <p className="text-sm text-muted">Nada agendado para hoje. Que tal adicionar uma tarefa ou revisar as pendentes?</p>
+          <p className="text-sm text-muted">
+            Nada agendado para hoje. Que tal adicionar uma tarefa ou revisar as pendentes?
+          </p>
         )}
         {todaysTasks.map((t) => (
           <TaskItem key={t.id} task={t} onNavigate={onNavigate} />
         ))}
       </div>
-
-      <p className="text-center text-xs text-muted">
-        Nível {1 + Math.floor(rewards.points / 100)} · {rewards.points} pts · 🔥 {rewards.streakDays} dias
-      </p>
     </div>
   )
 }
