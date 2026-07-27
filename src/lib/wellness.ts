@@ -20,6 +20,15 @@ function inWorkHours() {
   return hm >= workStart && hm < workEnd
 }
 
+/** Timestamp do início do expediente de hoje (workStart do dia atual). */
+function todayWorkStartTs() {
+  const { workStart } = useAppStore.getState().settings
+  const [h, m] = workStart.split(':').map(Number)
+  const start = new Date()
+  start.setHours(h, m, 0, 0)
+  return start.getTime()
+}
+
 /**
  * Liga os lembretes de bem-estar: beber água em intervalo fixo e um chamado
  * de volta ao foco quando o app fica muito tempo sem uso (aba aberta,
@@ -55,7 +64,10 @@ export function startWellnessReminders() {
   setInterval(() => {
     if (!inWorkHours()) return
     if (useAppStore.getState().timerRunning) return
-    const idleMinutes = Math.floor((Date.now() - lastActivity) / 60_000)
+    // Inatividade nunca conta antes do expediente de hoje: se o app ficou
+    // aberto durante a noite, o contador recomeça a partir do workStart.
+    const idleSince = Math.max(lastActivity, todayWorkStartTs())
+    const idleMinutes = Math.floor((Date.now() - idleSince) / 60_000)
     const sinceNudgeMinutes = (Date.now() - lastNudge) / 60_000
     if (idleMinutes >= IDLE_AFTER_MIN && sinceNudgeMinutes >= IDLE_REPEAT_MIN) {
       lastNudge = Date.now()
