@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS } from '../types'
 // Camada de acesso a dados: converte snake_case (Postgres) <-> camelCase (app).
 // Os tipos do app são mantidos intactos; `id: 1` de rewards/settings vira user_id no banco.
 
-type TaskRow = {
+export type TaskRow = {
   id: number
   title: string
   category: string
@@ -18,7 +18,7 @@ type TaskRow = {
   completed_at: string | null
 }
 
-type SessionRow = {
+export type SessionRow = {
   id: number
   task_id: number | null
   type: string
@@ -30,7 +30,7 @@ type SessionRow = {
 
 type WaterRow = { id: number; date_key: string; ml: number; at: string }
 
-function rowToTask(r: TaskRow): Task {
+export function rowToTask(r: TaskRow): Task {
   return {
     id: r.id,
     title: r.title,
@@ -59,7 +59,7 @@ function taskToRow(t: Partial<Task>) {
   return row
 }
 
-function rowToSession(r: SessionRow): FocusSession {
+export function rowToSession(r: SessionRow): FocusSession {
   return {
     id: r.id,
     taskId: r.task_id ?? undefined,
@@ -80,6 +80,23 @@ function sessionToRow(s: Partial<FocusSession>) {
   if ('endedAt' in s) row.ended_at = s.endedAt ?? null
   if (s.completed !== undefined) row.completed = s.completed
   return row
+}
+
+export type RewardsRow = {
+  points: number
+  streak_days: number
+  last_active_date: string | null
+  last_water_goal_date: string | null
+}
+
+export function rowToRewards(r: RewardsRow): RewardsState {
+  return {
+    id: 1,
+    points: r.points,
+    streakDays: r.streak_days,
+    lastActiveDate: r.last_active_date ?? undefined,
+    lastWaterGoalDate: r.last_water_goal_date ?? undefined,
+  }
 }
 
 function throwOn(error: { message: string } | null) {
@@ -108,13 +125,7 @@ export async function fetchAll(): Promise<{
 
   let rewards: RewardsState
   if (rewardsRes.data) {
-    rewards = {
-      id: 1,
-      points: rewardsRes.data.points,
-      streakDays: rewardsRes.data.streak_days,
-      lastActiveDate: rewardsRes.data.last_active_date ?? undefined,
-      lastWaterGoalDate: rewardsRes.data.last_water_goal_date ?? undefined,
-    }
+    rewards = rowToRewards(rewardsRes.data)
   } else {
     rewards = { id: 1, points: 0, streakDays: 0 }
     await saveRewards(rewards)
@@ -154,6 +165,13 @@ export async function updateTask(id: number, patch: Partial<Task>): Promise<void
   throwOn(error)
 }
 
+/** Conclui no banco (função complete_task): marca a tarefa e soma os pontos de forma atômica. */
+export async function completeTask(id: number, today: string): Promise<{ task: Task; rewards: RewardsState }> {
+  const { data, error } = await supabase.rpc('complete_task', { p_task_id: id, p_today: today })
+  throwOn(error)
+  return { task: rowToTask(data as TaskRow), rewards: await fetchRewards() }
+}
+
 export async function deleteTask(id: number): Promise<void> {
   const { error } = await supabase.from('tasks').delete().eq('id', id)
   throwOn(error)
@@ -180,6 +198,19 @@ async function currentUserId(): Promise<string> {
   const id = data.session?.user.id
   if (!id) throw new Error('Sessão expirada. Entre de novo.')
   return id
+}
+
+export async function fetchRewards(): Promise<RewardsState> {
+  const { data, error } = await supabase.from('rewards').select('*').single()
+  throwOn(error)
+  return rowToRewards(data as RewardsRow)
+}
+
+/** Soma pontos no banco (função add_points), sem sobrescrever pontos dados pelo Claude via MCP. */
+export async function addPoints(amount: number, today: string): Promise<RewardsState> {
+  const { data, error } = await supabase.rpc('add_points', { p_amount: amount, p_today: today })
+  throwOn(error)
+  return rowToRewards(data as RewardsRow)
 }
 
 export async function saveRewards(rewards: RewardsState): Promise<void> {

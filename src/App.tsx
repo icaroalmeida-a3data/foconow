@@ -16,14 +16,19 @@ import { FocusMiniStatus } from './components/FocusMiniStatus'
 import { Toast } from './components/Toast'
 import { InstallButton } from './components/InstallButton'
 import { AuthView } from './components/AuthView'
+import { OAuthConsent } from './components/OAuthConsent'
 import { useAppStore } from './store'
 import { useAuth } from './lib/auth'
 import { isSupabaseConfigured } from './lib/supabase'
 import { migrateLocalData } from './lib/migrateLocal'
+import { startRealtimeSync } from './lib/realtime'
 import { requestNotificationPermission } from './lib/notifications'
 import { startWellnessReminders } from './lib/wellness'
 import { hasSeenOnboarding } from './lib/onboarding'
 import type { View } from './types'
+
+// Tela de consentimento do conector MCP (Claude); não carrega o resto do app
+const isOAuthConsent = window.location.pathname === '/oauth/consent'
 
 const TITLES: Record<View, string> = {
   dashboard: 'Painel do dia',
@@ -51,17 +56,19 @@ function App() {
   }, [initAuth])
 
   useEffect(() => {
-    if (!user) {
+    if (!user || isOAuthConsent) {
       reset()
       return
     }
     let cancelled = false
+    let stopSync: (() => void) | undefined
     ;(async () => {
       try {
         setLoadError(null)
         await migrateLocalData(user.id)
         await load()
         if (cancelled) return
+        stopSync = startRealtimeSync(user.id)
         requestNotificationPermission()
         startWellnessReminders()
         if (!hasSeenOnboarding()) setOnboardingOpen(true)
@@ -71,6 +78,7 @@ function App() {
     })()
     return () => {
       cancelled = true
+      stopSync?.()
     }
   }, [user, load, reset])
 
@@ -95,6 +103,10 @@ function App() {
 
   if (!user) {
     return <AuthView />
+  }
+
+  if (isOAuthConsent) {
+    return <OAuthConsent />
   }
 
   if (loadError) {

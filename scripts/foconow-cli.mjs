@@ -126,12 +126,8 @@ switch (cmd) {
   case 'done': {
     const id = Number(args[0])
     if (!id) fail('Informe o id: done <id>')
-    const { data, error } = await supabase
-      .from('tasks')
-      .update({ done: true, completed_at: new Date().toISOString() })
-      .eq('id', id)
-      .select('*')
-      .single()
+    // mesma regra do app e do conector MCP: conclui e soma os pontos no banco
+    const { data, error } = await supabase.rpc('complete_task', { p_task_id: id, p_today: todayKey })
     if (error) fail(error.message)
     console.log('Concluída: ' + fmt(data))
     break

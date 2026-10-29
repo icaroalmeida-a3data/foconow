@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import * as repo from './lib/repo'
 import type { Category, FocusSession, Priority, RewardsState, SessionType, Settings, Task, WaterEntry } from './types'
-import { DEFAULT_SETTINGS, PRIORITY_META } from './types'
+import { DEFAULT_SETTINGS } from './types'
 import { applyStreak, dayKeyFromISO, todayKey } from './lib/rewards'
 import { DURATIONS, focoPoints } from './lib/pomodoro'
 import { notify, playBreakEndChime, playFocusEndChime } from './lib/notifications'
@@ -74,6 +74,12 @@ interface AppState {
     offerExtend?: boolean
   } | null
   clearToast: () => void
+}
+
+/** Insere ou substitui pelo id; itens novos entram no topo (as listas são ordenadas do mais recente).
+ *  Evita duplicar quando o evento do realtime chega antes da resposta do insert. */
+export function upsertById<T extends { id?: number }>(list: T[], item: T): T[] {
+  return list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [item, ...list]
 }
 
 const DEFAULT_REWARDS: RewardsState = { id: 1, points: 0, streakDays: 0 }
@@ -172,19 +178,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: new Date().toISOString(),
     }
     const id = await repo.addTask(task)
-    set({ tasks: [{ ...task, id }, ...get().tasks] })
+    set({ tasks: upsertById(get().tasks, { ...task, id }) })
   },
 
   toggleTaskDone: async (id) => {
     const task = get().tasks.find((t) => t.id === id)
     if (!task) return
-    const nowDone = !task.done
-    const patch = { done: nowDone, completedAt: nowDone ? new Date().toISOString() : undefined }
+    if (!task.done) {
+      // conclusão e pontos no banco, na mesma regra usada pelo Claude via MCP
+      const { task: done, rewards } = await repo.completeTask(id, todayKey())
+      set({ tasks: upsertById(get().tasks, done), rewards })
+      return
+    }
+    const patch = { done: false, completedAt: undefined }
     await repo.updateTask(id, patch)
     set({ tasks: get().tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) })
-    if (nowDone) {
-      await get().addPoints(PRIORITY_META[task.priority].points)
-    }
   },
 
   deleteTask: async (id) => {
@@ -209,7 +217,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       completed: false,
     }
     const id = await repo.addSession(session)
-    set({ sessions: [{ ...session, id }, ...get().sessions] })
+    set({ sessions: upsertById(get().sessions, { ...session, id }) })
     return id
   },
 
@@ -233,11 +241,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   addPoints: async (amount) => {
-    const current = get().rewards
-    const withStreak = applyStreak(current)
-    const next: RewardsState = { ...withStreak, points: withStreak.points + amount }
-    await repo.saveRewards(next)
-    set({ rewards: next })
+    set({ rewards: await repo.addPoints(amount, todayKey()) })
   },
 
   timerMode: 'foco',

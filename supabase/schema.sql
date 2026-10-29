@@ -1,6 +1,7 @@
 -- Schema do FocoNow para Supabase.
 -- Como aplicar: Supabase Dashboard > SQL Editor > cole este arquivo inteiro > Run.
 -- Todas as tabelas usam RLS: cada usuário só enxerga e altera as próprias linhas.
+-- Depois rode também os arquivos de supabase/migrations/ em ordem (funções de pontos e realtime).
 
 create table public.tasks (
   id bigint generated always as identity primary key,
