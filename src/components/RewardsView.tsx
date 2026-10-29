@@ -15,6 +15,7 @@ export function RewardsView() {
     [tasks, sessions, rewards, water, settings.weightKg],
   )
   const { level, into, span, fraction } = levelProgress(rewards.points)
+  const earnedCount = badges.filter((b) => b.earned).length
 
   const totalFocoMinutes = useMemo(
     () => sessions.filter((s) => s.type === 'foco' && s.completed).reduce((sum, s) => sum + s.durationMinutes, 0),
@@ -23,16 +24,16 @@ export function RewardsView() {
   const tasksDone = tasks.filter((t) => t.done).length
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
-      <section className="pixel-panel bg-surface p-6">
-        <div className="flex items-center justify-between">
+    <div className="mx-auto flex max-w-2xl flex-col gap-4 md:gap-8">
+      <section className="pixel-panel bg-surface p-4 md:p-6">
+        <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-sm text-muted">Nível atual</p>
-            <p className="font-pixel text-xl text-ink">Nv {level}</p>
+            <p className="font-pixel text-lg text-ink md:text-xl">Nv {level}</p>
           </div>
           <div className="text-right">
             <p className="text-sm text-muted">Pontos totais</p>
-            <p className="font-pixel text-xl text-brand">{rewards.points}</p>
+            <p className="font-pixel text-lg text-brand md:text-xl">{rewards.points}</p>
           </div>
         </div>
         <div className="mt-4 h-4 border-2 border-ink bg-bg">
@@ -43,34 +44,38 @@ export function RewardsView() {
         </p>
       </section>
 
-      <section className="grid grid-cols-3 gap-4">
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-warn">🔥{rewards.streakDays}</p>
-          <p className="mt-1 text-xs text-muted">dias seguidos</p>
+      <section className="grid grid-cols-3 gap-2.5 md:gap-4">
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-warn md:text-lg">🔥{rewards.streakDays}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">dias</p>
         </div>
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-ink">{tasksDone}</p>
-          <p className="mt-1 text-xs text-muted">tarefas concluídas</p>
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-ink md:text-lg">{tasksDone}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">tarefas</p>
         </div>
-        <div className="pixel-panel bg-surface p-4 text-center">
-          <p className="font-pixel text-lg text-ink">{totalFocoMinutes}</p>
-          <p className="mt-1 text-xs text-muted">minutos de foco</p>
+        <div className="pixel-panel-sm bg-surface p-2.5 text-center md:p-4">
+          <p className="font-pixel text-base text-ink md:text-lg">{totalFocoMinutes}</p>
+          <p className="mt-1.5 text-xs leading-tight text-muted">min</p>
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 font-pixel text-[10px] text-muted">Conquistas</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <h2 className="mb-3 font-pixel text-[10px] text-muted">
+          Conquistas ({earnedCount} de {badges.length})
+        </h2>
+        <div className="grid grid-cols-3 gap-2.5 md:grid-cols-4 md:gap-4">
           {badges.map((b) => (
             <div
               key={b.id}
-              className={`flex flex-col items-center gap-1 p-4 text-center ${
-                b.earned ? 'pixel-panel-sm animate-pop-in bg-brand-light' : 'border-2 border-dashed border-muted bg-surface opacity-50 grayscale'
+              className={`flex flex-col items-center justify-center gap-1.5 p-2.5 text-center md:p-4 ${
+                b.earned
+                  ? 'pixel-panel-sm animate-pop-in bg-brand-light'
+                  : 'border-2 border-dashed border-muted bg-surface opacity-50 grayscale'
               }`}
               title={b.description}
             >
-              <span className="text-3xl">{b.emoji}</span>
-              <span className="text-xs font-medium text-ink">{b.label}</span>
+              <span className="text-2xl md:text-3xl">{b.emoji}</span>
+              <span className="text-xs font-medium leading-tight text-ink">{b.label}</span>
             </div>
           ))}
         </div>

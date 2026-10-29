@@ -1,0 +1,4 @@
+# Quebras de linha sempre LF no repositório e no checkout,
+# em qualquer sistema — evita ruído de CRLF nos diffs no Windows
+* text=auto eol=lf
+*.png binary
