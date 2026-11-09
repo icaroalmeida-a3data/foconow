@@ -10,11 +10,22 @@ export type Category =
 
 export type Priority = 'alta' | 'media' | 'baixa'
 
+/** Etapa de uma tarefa aberta no Kanban. "Concluído" não é etapa: é o campo done. */
+export type Stage = 'a_fazer' | 'fazendo'
+
+/** Coluna do quadro: as etapas abertas + concluída. */
+export type BoardColumn = Stage | 'concluida'
+
+export function boardColumnOf(task: { done: boolean; stage: Stage }): BoardColumn {
+  return task.done ? 'concluida' : task.stage
+}
+
 export interface Task {
   id?: number
   title: string
   category: Category
   priority: Priority
+  stage: Stage
   dueDate?: string // yyyy-MM-dd
   estimatedPomodoros: number
   completedPomodoros: number
@@ -66,13 +77,20 @@ export interface WaterEntry {
   at: string // ISO
 }
 
+// Tokens --color-cat-* (src/index.css), não hex: o par cor/fundo inverte sozinho no tema escuro
+const cat = (key: Category, label: string) => ({
+  label,
+  color: `var(--color-cat-${key})`,
+  bg: `var(--color-cat-${key}-light)`,
+})
+
 export const CATEGORY_META: Record<Category, { label: string; color: string; bg: string }> = {
-  proposta: { label: 'Proposta', color: '#a04a2e', bg: '#f7e0d3' },
-  reuniao: { label: 'Reunião', color: '#2b6a8a', bg: '#ddeef2' },
-  arquitetura: { label: 'Arquitetura', color: '#7d5ba6', bg: '#ece3f2' },
-  documentacao: { label: 'Documentação', color: '#3f7d5d', bg: '#e0ede4' },
-  admin: { label: 'Admin', color: '#5f5b4e', bg: '#eae7dc' },
-  outro: { label: 'Outro', color: '#7a7462', bg: '#f0eee6' },
+  proposta: cat('proposta', 'Proposta'),
+  reuniao: cat('reuniao', 'Reunião'),
+  arquitetura: cat('arquitetura', 'Arquitetura'),
+  documentacao: cat('documentacao', 'Documentação'),
+  admin: cat('admin', 'Admin'),
+  outro: cat('outro', 'Outro'),
 }
 
 export const PRIORITY_META: Record<

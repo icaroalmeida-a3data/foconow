@@ -10,6 +10,8 @@ export type TaskRow = {
   title: string
   category: string
   priority: string
+  /** Ausente enquanto a migração 003 (Kanban) não foi aplicada no banco. */
+  stage?: string
   due_date: string | null
   estimated_pomodoros: number
   completed_pomodoros: number
@@ -36,6 +38,7 @@ export function rowToTask(r: TaskRow): Task {
     title: r.title,
     category: r.category as Task['category'],
     priority: r.priority as Task['priority'],
+    stage: r.stage === 'fazendo' ? 'fazendo' : 'a_fazer',
     dueDate: r.due_date ?? undefined,
     estimatedPomodoros: r.estimated_pomodoros,
     completedPomodoros: r.completed_pomodoros,
@@ -50,6 +53,7 @@ function taskToRow(t: Partial<Task>) {
   if (t.title !== undefined) row.title = t.title
   if (t.category !== undefined) row.category = t.category
   if (t.priority !== undefined) row.priority = t.priority
+  if (t.stage !== undefined) row.stage = t.stage
   if ('dueDate' in t) row.due_date = t.dueDate ?? null
   if (t.estimatedPomodoros !== undefined) row.estimated_pomodoros = t.estimatedPomodoros
   if (t.completedPomodoros !== undefined) row.completed_pomodoros = t.completedPomodoros
@@ -155,7 +159,10 @@ export async function fetchAll(): Promise<{
 }
 
 export async function addTask(task: Task): Promise<number> {
-  const { data, error } = await supabase.from('tasks').insert(taskToRow(task)).select('id').single()
+  // stage fica de fora: o default do banco já é 'a_fazer', e assim criar funciona antes da migração 003
+  const row = taskToRow(task)
+  delete row.stage
+  const { data, error } = await supabase.from('tasks').insert(row).select('id').single()
   throwOn(error)
   return data!.id
 }

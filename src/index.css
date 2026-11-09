@@ -35,6 +35,20 @@
 
 :root {
   color-scheme: light;
+
+  /* Categorias das tarefas (fora do @theme: são usadas via style, não por classe utilitária) */
+  --color-cat-proposta: #a04a2e;
+  --color-cat-proposta-light: #f7e0d3;
+  --color-cat-reuniao: #2b6a8a;
+  --color-cat-reuniao-light: #ddeef2;
+  --color-cat-arquitetura: #7d5ba6;
+  --color-cat-arquitetura-light: #ece3f2;
+  --color-cat-documentacao: #3f7d5d;
+  --color-cat-documentacao-light: #e0ede4;
+  --color-cat-admin: #5f5b4e;
+  --color-cat-admin-light: #eae7dc;
+  --color-cat-outro: #7a7462;
+  --color-cat-outro-light: #f0eee6;
 }
 
 /* Tema escuro pixel art — carvão quente no fundo, tinta creme e coral aceso.
@@ -69,6 +83,19 @@
   --color-water-light: #1f3540;
 
   --color-input-focus: #38332b;
+
+  --color-cat-proposta: #f2bd9f;
+  --color-cat-proposta-light: #482c1e;
+  --color-cat-reuniao: #86bcd3;
+  --color-cat-reuniao-light: #1f3540;
+  --color-cat-arquitetura: #c3a8e0;
+  --color-cat-arquitetura-light: #33283f;
+  --color-cat-documentacao: #9abe88;
+  --color-cat-documentacao-light: #29331f;
+  --color-cat-admin: #c9c2ad;
+  --color-cat-admin-light: #3a362d;
+  --color-cat-outro: #a29a85;
+  --color-cat-outro-light: #2c2822;
 }
 
 * {
@@ -145,6 +172,24 @@ body {
 
 .animate-pop-in {
   animation: pop-in 0.25s steps(4);
+}
+
+/* Coluna do Kanban que vai receber o cartão arrastado */
+.kanban-drop {
+  background: var(--color-brand-light);
+  outline: 3px dashed var(--color-brand);
+  outline-offset: -3px;
+}
+
+/* Quem pediu menos movimento ao sistema não recebe pop-in, sheet nem piscar */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Bottom sheet sobe da borda; escalar do centro deformaria a faixa inteira */

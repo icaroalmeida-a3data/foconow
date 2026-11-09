@@ -2,6 +2,36 @@ import { Timer, Trash2 } from 'lucide-react'
 import type { Task, View } from '../types'
 import { CATEGORY_META, PRIORITY_META } from '../types'
 import { useAppStore } from '../store'
+import { todayKey } from '../lib/rewards'
+
+/** Categoria, prioridade, prazo e pomodoros; usado na lista e nos cartões do Kanban. */
+export function TaskChips({ task }: { task: Task }) {
+  const cat = CATEGORY_META[task.category]
+  const prio = PRIORITY_META[task.priority]
+  const overdue = !task.done && task.dueDate !== undefined && task.dueDate < todayKey()
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[0.7rem] text-muted">
+      <span className="border px-1 py-0.5 font-medium" style={{ color: cat.color, background: cat.bg, borderColor: cat.color }}>
+        {cat.label}
+      </span>
+      <span
+        className="border px-1 py-0.5 font-medium"
+        style={{ color: prio.color, background: prio.bg, borderColor: prio.color }}
+      >
+        {prio.label}
+      </span>
+      {task.dueDate && (
+        <span title={`Vence em ${task.dueDate}`} className={overdue ? 'font-medium text-danger' : undefined}>
+          {task.dueDate.slice(8, 10)}/{task.dueDate.slice(5, 7)}
+          {overdue && ' · atrasada'}
+        </span>
+      )}
+      <span title="Pomodoros concluídos / estimados">
+        🍅 {task.completedPomodoros}/{task.estimatedPomodoros}
+      </span>
+    </div>
+  )
+}
 
 /**
  * Linha da tarefa em colunas fixas de 48px: no toque não existe hover, então
@@ -9,10 +39,8 @@ import { useAppStore } from '../store'
  */
 export function TaskItem({ task, onNavigate }: { task: Task; onNavigate: (v: View) => void }) {
   const toggleTaskDone = useAppStore((s) => s.toggleTaskDone)
-  const deleteTask = useAppStore((s) => s.deleteTask)
+  const openTaskDialog = useAppStore((s) => s.openTaskDialog)
   const setFocusTaskId = useAppStore((s) => s.setFocusTaskId)
-  const cat = CATEGORY_META[task.category]
-  const prio = PRIORITY_META[task.priority]
 
   return (
     <div className={`pixel-panel-sm flex items-stretch bg-surface ${task.done ? 'opacity-60' : ''}`}>
@@ -28,31 +56,15 @@ export function TaskItem({ task, onNavigate }: { task: Task; onNavigate: (v: Vie
         />
       </label>
 
-      <div className="min-w-0 flex-1 px-3 py-2.5">
+      <button
+        type="button"
+        title="Editar tarefa"
+        onClick={() => task.id && openTaskDialog('edit', task.id)}
+        className="min-w-0 flex-1 px-3 py-2.5 text-left hover:bg-bg"
+      >
         <p className={`text-sm font-medium text-ink ${task.done ? 'line-through' : 'text-pretty'}`}>{task.title}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[0.7rem] text-muted">
-          <span
-            className="border px-1 py-0.5 font-medium"
-            style={{ color: cat.color, background: cat.bg, borderColor: cat.color }}
-          >
-            {cat.label}
-          </span>
-          <span
-            className="border px-1 py-0.5 font-medium"
-            style={{ color: prio.color, background: prio.bg, borderColor: prio.color }}
-          >
-            {prio.label}
-          </span>
-          {task.dueDate && (
-            <span title={`Vence em ${task.dueDate}`}>
-              {task.dueDate.slice(8, 10)}/{task.dueDate.slice(5, 7)}
-            </span>
-          )}
-          <span title="Pomodoros concluídos / estimados">
-            🍅 {task.completedPomodoros}/{task.estimatedPomodoros}
-          </span>
-        </div>
-      </div>
+        <TaskChips task={task} />
+      </button>
 
       {!task.done && (
         <button
@@ -70,7 +82,7 @@ export function TaskItem({ task, onNavigate }: { task: Task; onNavigate: (v: Vie
       <button
         title="Excluir"
         aria-label="Excluir tarefa"
-        onClick={() => task.id && deleteTask(task.id)}
+        onClick={() => task.id && openTaskDialog('delete', task.id)}
         className="flex w-[48px] shrink-0 items-center justify-center border-l-2 border-ink text-muted hover:bg-danger-light hover:text-danger"
       >
         <Trash2 size={18} />
