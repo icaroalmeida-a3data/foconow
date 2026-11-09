@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import * as repo from './lib/repo'
-import type { Category, FocusSession, Priority, RewardsState, SessionType, Settings, Task, WaterEntry } from './types'
-import { DEFAULT_SETTINGS } from './types'
+import type { BoardColumn, Category, FocusSession, Priority, RewardsState, SessionType, Settings, Task, WaterEntry } from './types'
+import { boardColumnOf, DEFAULT_SETTINGS } from './types'
 import { applyStreak, dayKeyFromISO, todayKey } from './lib/rewards'
 import { DURATIONS, focoPoints } from './lib/pomodoro'
 import { notify, playBreakEndChime, playFocusEndChime } from './lib/notifications'
@@ -39,7 +39,19 @@ interface AppState {
 
   addTask: (input: { title: string; category: Category; priority: Priority; dueDate?: string; estimatedPomodoros: number }) => Promise<void>
   toggleTaskDone: (id: number) => Promise<void>
+  /** Move a tarefa entre as colunas do Kanban; soltar em "Concluído" conclui e pontua. */
+  moveTask: (id: number, to: BoardColumn) => Promise<void>
   deleteTask: (id: number) => Promise<void>
+  /** Edita campos da tarefa; devolve false (e avisa por toast) se o banco recusar. */
+  updateTask: (
+    id: number,
+    patch: Partial<Pick<Task, 'title' | 'category' | 'priority' | 'dueDate' | 'estimatedPomodoros'>>,
+  ) => Promise<boolean>
+
+  /** Diálogo de tarefa aberto (editar ou confirmar exclusão); renderizado uma vez só, no App. */
+  taskDialog: { kind: 'edit' | 'delete'; id: number } | null
+  openTaskDialog: (kind: 'edit' | 'delete', id: number) => void
+  closeTaskDialog: () => void
   bumpTaskPomodoro: (id: number) => Promise<void>
 
   startSession: (type: SessionType, durationMinutes: number, taskId?: number) => Promise<number>
@@ -156,6 +168,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       water: [],
       focusTaskId: null,
       historyDate: null,
+      taskDialog: null,
       timerMode: 'foco',
       timerDurationMinutes: DURATIONS.foco,
       timerSecondsLeft: DURATIONS.foco * 60,
@@ -171,6 +184,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       title: input.title,
       category: input.category,
       priority: input.priority,
+      stage: 'a_fazer',
       dueDate: input.dueDate,
       estimatedPomodoros: input.estimatedPomodoros,
       completedPomodoros: 0,
@@ -194,6 +208,61 @@ export const useAppStore = create<AppState>((set, get) => ({
     await repo.updateTask(id, patch)
     set({ tasks: get().tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) })
   },
+
+  moveTask: async (id, to) => {
+    const before = get().tasks.find((t) => t.id === id)
+    if (!before || boardColumnOf(before) === to) return
+    const patchLocal = (patch: Partial<Task>) =>
+      set({ tasks: get().tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) })
+
+    // Otimista: o cartão muda de coluna na hora; se o banco recusar, volta para onde estava.
+    try {
+      if (to === 'concluida') {
+        patchLocal({ done: true, completedAt: new Date().toISOString() })
+        const { task: done, rewards } = await repo.completeTask(id, todayKey())
+        set({ tasks: upsertById(get().tasks, done), rewards })
+        return
+      }
+      const patch: Partial<Task> = before.done ? { stage: to, done: false, completedAt: undefined } : { stage: to }
+      patchLocal(patch)
+      await repo.updateTask(id, patch)
+    } catch (err) {
+      set({ tasks: upsertById(get().tasks, before) })
+      const missingColumn = err instanceof Error && /stage/i.test(err.message)
+      set({
+        toast: {
+          id: Date.now(),
+          kind: 'erro',
+          title: 'Não foi possível mover',
+          body: missingColumn
+            ? 'Falta aplicar a migração 003_kanban.sql no Supabase.'
+            : 'Verifique sua conexão e tente de novo.',
+        },
+      })
+    }
+  },
+
+  updateTask: async (id, patch) => {
+    try {
+      await repo.updateTask(id, patch)
+      set({ tasks: get().tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) })
+      return true
+    } catch {
+      set({
+        toast: {
+          id: Date.now(),
+          kind: 'erro',
+          title: 'Não foi possível salvar',
+          body: 'Verifique sua conexão e tente de novo.',
+        },
+      })
+      return false
+    }
+  },
+
+  taskDialog: null,
+  openTaskDialog: (kind, id) => set({ taskDialog: { kind, id } }),
+  closeTaskDialog: () => set({ taskDialog: null }),
 
   deleteTask: async (id) => {
     await repo.deleteTask(id)
@@ -274,6 +343,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       state.timerMode === 'foco' && state.timerTaskId ? state.timerTaskId : undefined,
     )
     set({ timerRunning: true, timerSessionId: id })
+
+    // Começou a focar numa tarefa que estava em "A fazer": ela passa para "Em andamento".
+    const focused = state.timerMode === 'foco' ? get().tasks.find((t) => t.id === state.timerTaskId) : undefined
+    if (focused?.id && !focused.done && focused.stage === 'a_fazer') {
+      const taskId = focused.id
+      repo
+        .updateTask(taskId, { stage: 'fazendo' })
+        .then(() => set({ tasks: get().tasks.map((t) => (t.id === taskId ? { ...t, stage: 'fazendo' } : t)) }))
+        .catch(() => {}) // sem a migração 003 a etapa só não muda; o timer segue normalmente
+    }
     clearTicking()
     tickInterval = setInterval(() => {
       const s = get()

@@ -25,6 +25,8 @@ const TIME_ZONE = process.env.FOCONOW_TZ ?? 'America/Sao_Paulo'
 // Mesmos valores de src/types.ts (CATEGORY_META / PRIORITY_META)
 const CATEGORIES = ['proposta', 'reuniao', 'arquitetura', 'documentacao', 'admin', 'outro'] as const
 const PRIORITIES = ['alta', 'media', 'baixa'] as const
+// Etapas abertas do Kanban (coluna stage, migração 003); "concluida" é o campo done
+const STAGES = ['a_fazer', 'fazendo'] as const
 
 const INSTRUCTIONS = `FocoNow é o gerenciador de tarefas e Pomodoro do usuário. Use estas ferramentas para
 cadastrar, consultar, atualizar e concluir as tarefas dele.
@@ -33,6 +35,8 @@ cadastrar, consultar, atualizar e concluir as tarefas dele.
 - Prioridades: alta (25 pontos ao concluir), media (15), baixa (10).
 - Prazos são datas yyyy-MM-dd no fuso ${TIME_ZONE}. Toda resposta traz o campo "hoje" para você
   converter "amanhã", "sexta" etc. sem chutar a data.
+- Kanban: toda tarefa tem uma etapa — a_fazer, fazendo ou concluida. Ao começar a trabalhar em algo,
+  mova para "fazendo" com atualizar_tarefa; para concluir use concluir_tarefa (é o que dá os pontos).
 - Uma tarefa tem pomodoros estimados (blocos de 25 min); use 1 se não souber.
 - Concluir pelo conector dá os mesmos pontos e streak de concluir no app.
 - Antes de excluir, confirme com o usuário; prefira concluir ou reabrir.`
@@ -66,6 +70,7 @@ type TaskRow = {
   title: string
   category: string
   priority: string
+  stage?: string // ausente até a migração 003 ser aplicada
   due_date: string | null
   estimated_pomodoros: number
   completed_pomodoros: number
@@ -80,6 +85,7 @@ function presentTask(r: TaskRow) {
     titulo: r.title,
     categoria: r.category,
     prioridade: r.priority,
+    etapa: r.done ? 'concluida' : (r.stage ?? 'a_fazer'),
     prazo: r.due_date,
     pomodoros: `${r.completed_pomodoros}/${r.estimated_pomodoros}`,
     concluida: r.done,
@@ -133,6 +139,7 @@ function buildServer(db: SupabaseClient) {
           .enum(['hoje', 'atrasadas', 'ate_hoje', 'proximos_7_dias', 'sem_prazo'])
           .optional()
           .describe('ate_hoje = atrasadas + hoje'),
+        etapa: z.enum(STAGES).optional().describe('coluna do Kanban entre as pendentes'),
         categoria: z.enum(CATEGORIES).optional(),
         prioridade: z.enum(PRIORITIES).optional(),
         busca: z.string().min(1).optional().describe('trecho do título'),
@@ -155,6 +162,7 @@ function buildServer(db: SupabaseClient) {
       if (args.prazo === 'proximos_7_dias') q = q.gte('due_date', today).lte('due_date', addDays(today, 7))
       if (args.prazo === 'sem_prazo') q = q.is('due_date', null)
 
+      if (args.etapa) q = q.eq('stage', args.etapa).eq('done', false)
       if (args.categoria) q = q.eq('category', args.categoria)
       if (args.prioridade) q = q.eq('priority', args.prioridade)
       if (args.busca) q = q.ilike('title', `%${args.busca}%`)
@@ -184,6 +192,7 @@ function buildServer(db: SupabaseClient) {
         prioridade: z.enum(PRIORITIES).default('media'),
         prazo: day.optional().describe('data limite yyyy-MM-dd'),
         pomodoros_estimados: z.number().int().min(1).max(20).default(1),
+        etapa: z.enum(STAGES).optional().describe('coluna do Kanban; padrão a_fazer'),
       }),
     },
     async (args) => {
@@ -195,6 +204,7 @@ function buildServer(db: SupabaseClient) {
           priority: args.prioridade,
           due_date: args.prazo ?? null,
           estimated_pomodoros: args.pomodoros_estimados,
+          ...(args.etapa ? { stage: args.etapa } : {}),
         })
         .select('*')
         .single()
@@ -207,7 +217,8 @@ function buildServer(db: SupabaseClient) {
     'atualizar_tarefa',
     {
       title: 'Atualizar tarefa',
-      description: 'Altera título, categoria, prioridade, prazo ou pomodoros estimados. Envie só o que muda.',
+      description:
+        'Altera título, categoria, prioridade, prazo, pomodoros estimados ou a etapa do Kanban. Envie só o que muda.',
       inputSchema: z.object({
         id: taskId,
         titulo: z.string().trim().min(1).max(300).optional(),
@@ -215,6 +226,7 @@ function buildServer(db: SupabaseClient) {
         prioridade: z.enum(PRIORITIES).optional(),
         prazo: day.nullable().optional().describe('null remove o prazo'),
         pomodoros_estimados: z.number().int().min(1).max(20).optional(),
+        etapa: z.enum(STAGES).optional().describe('move a tarefa pendente de coluna no Kanban'),
       }),
       annotations: { idempotentHint: true },
     },
@@ -225,6 +237,7 @@ function buildServer(db: SupabaseClient) {
       if (args.prioridade !== undefined) patch.priority = args.prioridade
       if (args.prazo !== undefined) patch.due_date = args.prazo
       if (args.pomodoros_estimados !== undefined) patch.estimated_pomodoros = args.pomodoros_estimados
+      if (args.etapa !== undefined) patch.stage = args.etapa
       if (Object.keys(patch).length === 0) return fail('Nada para atualizar: envie pelo menos um campo.')
 
       const { data, error } = await db.from('tasks').update(patch).eq('id', args.id).select('*').maybeSingle()

@@ -14,6 +14,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { ThemeToggle } from './components/ThemeToggle'
 import { FocusMiniStatus } from './components/FocusMiniStatus'
 import { Toast } from './components/Toast'
+import { TaskDialogs } from './components/TaskDialogs'
 import { InstallButton } from './components/InstallButton'
 import { AuthView } from './components/AuthView'
 import { OAuthConsent } from './components/OAuthConsent'
@@ -141,6 +142,7 @@ function App() {
           onOpenOnboarding={() => setOnboardingOpen(true)}
         />
       )}
+      <TaskDialogs />
       <Toast />
       <Sidebar view={view} onChange={setView} />
 
